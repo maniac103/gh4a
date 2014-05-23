@@ -117,7 +117,7 @@ public class WikiListActivity extends LoadingFragmentActivity {
             }
         }
     }
-
+    
     private void openViewer(Feed feed) {
         Intent intent = new Intent(this, WikiActivity.class);
         intent.putExtra(Constants.Blog.TITLE, feed.getTitle());

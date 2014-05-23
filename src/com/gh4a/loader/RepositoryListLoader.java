@@ -1,20 +1,22 @@
 package com.gh4a.loader;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
+import android.content.Context;
+
+import com.gh4a.Constants;
+import com.gh4a.Gh4Application;
 
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.service.RepositoryService;
 
-import android.content.Context;
-
-import com.gh4a.Gh4Application;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
 public class RepositoryListLoader extends BaseLoader<Collection<Repository>> {
     private String mLogin;
     private Map<String, String> mFilterData;
     private int mSize;
+    private String mUserType;
 
     public RepositoryListLoader(Context context, String login, String userType,
             Map<String, String> filterData, int size) {
@@ -22,6 +24,7 @@ public class RepositoryListLoader extends BaseLoader<Collection<Repository>> {
         this.mLogin = login;
         this.mFilterData = filterData;
         this.mSize = size;
+        this.mUserType = userType;
     }
 
     @Override
@@ -33,6 +36,12 @@ public class RepositoryListLoader extends BaseLoader<Collection<Repository>> {
                 return repoService.pageRepositories(mFilterData, mSize).next();
             } else {
                 return repoService.getRepositories(mFilterData);
+            }
+        } else if (Constants.User.TYPE_ORG.equals(mUserType)) {
+            if (mSize > 0) {
+                return repoService.pageOrgRepositories(mLogin, mFilterData, mSize).next();
+            } else {
+                return repoService.getOrgRepositories(mLogin, mFilterData);
             }
         } else {
             if (mSize > 0) {

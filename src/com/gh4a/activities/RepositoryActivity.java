@@ -123,7 +123,7 @@ public class RepositoryActivity extends LoadingFragmentPagerActivity implements 
         public void onResultReady(LoaderResult<List<RepositoryTag>> result) {
             if (!result.handleError(RepositoryActivity.this)) {
                 stopProgressDialog(mProgressDialog);
-                mTags = (List<RepositoryTag>) result.getData();
+                mTags = result.getData();
                 showTagsDialog();
                 getSupportLoaderManager().destroyLoader(LOADER_TAGS);
             }
@@ -235,7 +235,7 @@ public class RepositoryActivity extends LoadingFragmentPagerActivity implements 
     protected Fragment getFragment(int position) {
         switch (position) {
             case 0:
-                mRepositoryFragment = RepositoryFragment.newInstance(mRepository);
+                mRepositoryFragment = RepositoryFragment.newInstance(mRepository, mSelectedRef);
                 return mRepositoryFragment;
             case 1:
                 if (mDirStack.isEmpty()) {
@@ -287,7 +287,7 @@ public class RepositoryActivity extends LoadingFragmentPagerActivity implements 
     }
 
     @Override
-    public void onTreeSelected(ContentListFragment fragment, RepositoryContents content, String ref) {
+    public void onTreeSelected(RepositoryContents content, String ref) {
         String path = content.getPath();
         if (RepositoryContents.TYPE_DIR.equals(content.getType())) {
             mSelectedRef = ref;

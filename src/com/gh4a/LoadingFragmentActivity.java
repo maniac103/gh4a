@@ -20,10 +20,10 @@ public class LoadingFragmentActivity extends BaseSherlockFragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (!isOnline()) {
-            setErrorView();
-        } else {
+        if (isOnline()) {
             super.setContentView(R.layout.fragment_progress);
+        } else {
+            setErrorView();
         }
     }
 
@@ -87,10 +87,6 @@ public class LoadingFragmentActivity extends BaseSherlockFragmentActivity {
 
     public void setContentShown(boolean shown) {
         setContentShown(shown, true);
-    }
-
-    public void setContentShownNoAnimation(boolean shown) {
-        setContentShown(shown, false);
     }
 
     private void setContentShown(boolean shown, boolean animate) {

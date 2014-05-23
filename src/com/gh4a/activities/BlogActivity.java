@@ -28,7 +28,6 @@ import com.gh4a.Gh4Application;
 import com.gh4a.R;
 
 public class BlogActivity extends BaseSherlockFragmentActivity {
-    private String mTitle;
     private String mContent;
 
     private WebViewClient mWebViewClient = new WebViewClient() {
@@ -51,11 +50,11 @@ public class BlogActivity extends BaseSherlockFragmentActivity {
 
         setContentView(R.layout.web_viewer);
 
-        mTitle = getIntent().getStringExtra(Constants.Blog.TITLE);
+        String title = getIntent().getStringExtra(Constants.Blog.TITLE);
         mContent = getIntent().getStringExtra(Constants.Blog.CONTENT);
 
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle(mTitle);
+        actionBar.setTitle(title);
         actionBar.setSubtitle(R.string.blog);
         actionBar.setDisplayHomeAsUpEnabled(false);
 
@@ -69,6 +68,7 @@ public class BlogActivity extends BaseSherlockFragmentActivity {
         startActivity(intent);
     }
 
+    @SuppressWarnings("deprecation")
     private void fillData() {
         WebView webView = (WebView) findViewById(R.id.web_view);
         WebSettings s = webView.getSettings();

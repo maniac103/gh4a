@@ -67,7 +67,7 @@ public class UserFragment extends SherlockProgressFragment implements View.OnCli
         public void onResultReady(LoaderResult<User> result) {
             boolean success = !result.handleError(getActivity());
             if (success) {
-                mUser = (User) result.getData();
+                mUser = result.getData();
                 fillData();
             }
             setContentEmpty(!success);
@@ -310,7 +310,7 @@ public class UserFragment extends SherlockProgressFragment implements View.OnCli
                 String language = repo.getLanguage() != null
                         ? repo.getLanguage() : getString(R.string.unknown);
                 tvExtra.setText(getString(R.string.repo_search_extradata, language,
-                        Formatter.formatFileSize(getActivity(), repo.getSize()),
+                        Formatter.formatFileSize(getActivity(), repo.getSize() * 1000),
                         repo.getForks(), repo.getWatchers()));
 
                 ll.addView(rowView);

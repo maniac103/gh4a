@@ -21,7 +21,6 @@ public class Feed {
 
     private String id;
     private Date published;
-    private Date updated;
     private String link;
     private String title;
     private String content;
@@ -42,12 +41,7 @@ public class Feed {
     public void setPublished(Date published) {
         this.published = published;
     }
-    public Date getUpdated() {
-        return updated;
-    }
-    public void setUpdated(Date updated) {
-        this.updated = updated;
-    }
+
     public String getLink() {
         return link;
     }
@@ -72,7 +66,7 @@ public class Feed {
             preview = content.length() > 2000 ? content.substring(0, 2000) : content;
             preview = content.replaceAll("<(.|\n)*?>","");
             if (preview.length() > 500) {
-                preview = preview.toString().substring(0,  500);
+                preview = preview.substring(0,  500);
             }
         } else {
             preview = null;

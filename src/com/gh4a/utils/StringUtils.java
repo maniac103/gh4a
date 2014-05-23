@@ -15,24 +15,18 @@
  */
 package com.gh4a.utils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
+import android.content.Context;
+import android.text.TextUtils;
+import android.text.format.DateUtils;
+import android.util.Pair;
+
+import com.gh4a.Constants;
+import com.gh4a.Gh4Application;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.regex.Pattern;
-
-import android.content.Context;
-import android.text.TextUtils;
-import android.text.format.DateUtils;
-
-import com.gh4a.Constants;
-import com.gh4a.Gh4Application;
 
 /**
  * The Class StringUtils.
@@ -109,14 +103,14 @@ public class StringUtils {
     /**
      * To hex.
      *
-     * @param a the a
-     * @return the string
+     * @param dataBytes
+     * @return the hex string representation of dataBytes
      */
-    public static String toHex(byte[] a) {
-        StringBuilder sb = new StringBuilder(a.length * 2);
-        for (int i = 0; i < a.length; i++) {
-            sb.append(Character.forDigit((a[i] & 0xf0) >> 4, 16));
-            sb.append(Character.forDigit(a[i] & 0x0f, 16));
+    public static String toHex(byte[] dataBytes) {
+        StringBuilder sb = new StringBuilder(dataBytes.length * 2);
+        for (byte dataByte : dataBytes) {
+            sb.append(Character.forDigit((dataByte & 0xf0) >> 4, 16));
+            sb.append(Character.forDigit(dataByte & 0x0f, 16));
         }
         return sb.toString();
     }
@@ -136,43 +130,11 @@ public class StringUtils {
         return userLogin + (!StringUtils.isBlank(name) ? " - " + name : "");
     }
 
-    /**
-     * Convert stream to string.
-     *
-     * @param is the is
-     * @return the string
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public static String convertStreamToString(InputStream is) throws IOException {
-        /*
-         * To convert the InputStream to String we use the Reader.read(char[]
-         * buffer) method. We iterate until the Reader return -1 which means
-         * there's no more data to read. We use the StringWriter class to
-         * produce the string.
-         */
-        if (is == null) {
-            return "";
-        }
-
-        Writer writer = new StringWriter();
-
-        char[] buffer = new char[1024];
-        try {
-            Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-            int n;
-            while ((n = reader.read(buffer)) != -1) {
-                writer.write(buffer, 0, n);
-            }
-        } finally {
-            is.close();
-        }
-        return writer.toString();
-    }
-
-    public static String highlightSyntax(String data, boolean highlight, String fileName,
+    public static Pair<String,Boolean> highlightSyntax(String data, boolean highlight, String fileName,
             String repoOwner, String repoName, String ref) {
         String ext = FileUtils.getFileExtension(fileName);
         boolean highlighted = false;
+        boolean themed = false;
 
         StringBuilder content = new StringBuilder();
         content.append("<html><head><title></title>");
@@ -186,12 +148,16 @@ public class StringUtils {
                 highlighted = true;
             } else if (!Constants.SKIP_PRETTIFY_EXT.contains(ext)) {
                 data = TextUtils.htmlEncode(data).replace("\r\n", "<br>").replace("\n", "<br>");
-                content.append("<link href='file:///android_asset/prettify.css' rel='stylesheet' type='text/css'/>");
+
+                content.append("<link href='file:///android_asset/prettify-");
+                content.append(ThemeUtils.getCssTheme(Gh4Application.THEME));
+                content.append(".css' rel='stylesheet' type='text/css'/>");
                 content.append("<script src='file:///android_asset/prettify.js' type='text/javascript'></script>");
                 content.append("</head>");
                 content.append("<body onload='prettyPrint()'>");
                 content.append("<pre class='prettyprint linenums'>");
                 highlighted = true;
+                themed = true;
             }
         }
         if (!highlighted) {
@@ -209,9 +175,9 @@ public class StringUtils {
             content.append("<script>");
             if (repoOwner != null && repoName != null) {
                 content.append("var GitHub = new Object();");
-                content.append("GitHub.nameWithOwner = \"" + repoOwner + "/" + repoName + "\";");
+                content.append("GitHub.nameWithOwner = \"").append(repoOwner).append("/").append(repoName).append("\";");
                 if (ref != null) {
-                    content.append("GitHub.branch = \"" + ref + "\";");
+                    content.append("GitHub.branch = \"").append(ref).append("\";");
                 }
             }
             content.append("var text = document.getElementById('content').innerHTML;");
@@ -226,18 +192,11 @@ public class StringUtils {
 
         content.append("</body></html>");
 
-        return content.toString();
+        return new Pair<String, Boolean>(content.toString(), themed);
     }
 
     public static String highlightImage(String imageUrl) {
-        StringBuilder content = new StringBuilder();
-        content.append("<html><body style=\"background-color:#dddddd;margin:auto\">");
-        content.append("<span class=\"border:solid 1px #333333;\">");
-        content.append("<img src=\"" + imageUrl + "\" style=\"\"/>");
-        content.append("</span>");
-        content.append("</body></html>");
-
-        return content.toString();
+        return "<html><body style=\"background-color:#dddddd;margin:auto\">" + "<span class=\"border:solid 1px #333333;\">" + "<img src=\"" + imageUrl + "\" style=\"\"/>" + "</span>" + "</body></html>";
     }
 
     public static boolean checkEmail(String email) {

@@ -15,8 +15,6 @@
  */
 package com.gh4a.fragment;
 
-import org.eclipse.egit.github.core.Repository;
-
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
@@ -41,6 +39,7 @@ import com.gh4a.activities.WatcherListActivity;
 import com.gh4a.activities.WikiListActivity;
 import com.gh4a.loader.LoaderCallbacks;
 import com.gh4a.loader.LoaderResult;
+import com.gh4a.loader.PullRequestCountLoader;
 import com.gh4a.loader.ReadmeLoader;
 import com.gh4a.utils.IntentUtils;
 import com.gh4a.utils.StringUtils;
@@ -48,15 +47,18 @@ import com.gh4a.utils.UiUtils;
 import com.github.mobile.util.HtmlUtils;
 import com.github.mobile.util.HttpImageGetter;
 
+import org.eclipse.egit.github.core.Repository;
+
 public class RepositoryFragment extends SherlockProgressFragment implements OnClickListener {
     private Repository mRepository;
     private View mContentView;
+    private String mRef;
 
     private LoaderCallbacks<String> mReadmeCallback = new LoaderCallbacks<String>() {
         @Override
         public Loader<LoaderResult<String>> onCreateLoader(int id, Bundle args) {
             return new ReadmeLoader(getActivity(), mRepository.getOwner().getLogin(),
-                    mRepository.getName(), mRepository.getMasterBranch());
+                    mRepository.getName(), StringUtils.isBlank(mRef) ? mRepository.getMasterBranch() : mRef);
         }
         @Override
         public void onResultReady(LoaderResult<String> result) {
@@ -66,11 +68,26 @@ public class RepositoryFragment extends SherlockProgressFragment implements OnCl
         }
     };
 
-    public static RepositoryFragment newInstance(Repository repository) {
+    private LoaderCallbacks<Integer> mPullRequestsCallback = new LoaderCallbacks<Integer>() {
+        @Override
+        public Loader<LoaderResult<Integer>> onCreateLoader(int id, Bundle args) {
+            return new PullRequestCountLoader(getActivity(), mRepository, Constants.Issue.STATE_OPEN);
+        }
+
+        @Override
+        public void onResultReady(LoaderResult<Integer> result) {
+            View v = getView();
+            TextView tvPullRequestsCountView = (TextView) v.findViewById(R.id.tv_pull_requests_count);
+            tvPullRequestsCountView.setText(String.valueOf(result.getData()));
+        }
+    };
+
+    public static RepositoryFragment newInstance(Repository repository, String ref) {
         RepositoryFragment f = new RepositoryFragment();
 
         Bundle args = new Bundle();
         args.putSerializable("REPOSITORY", repository);
+        args.putString(Constants.Object.REF, ref);
         f.setArguments(args);
 
         return f;
@@ -80,6 +97,7 @@ public class RepositoryFragment extends SherlockProgressFragment implements OnCl
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mRepository = (Repository) getArguments().getSerializable("REPOSITORY");
+        mRef = getArguments().getString(Constants.Object.REF);
     }
 
     @Override
@@ -98,6 +116,7 @@ public class RepositoryFragment extends SherlockProgressFragment implements OnCl
         setContentShownNoAnimation(true);
 
         getLoaderManager().initLoader(0, null, mReadmeCallback);
+        getLoaderManager().initLoader(1, null, mPullRequestsCallback);
     }
 
     private void fillData() {
@@ -138,7 +157,7 @@ public class RepositoryFragment extends SherlockProgressFragment implements OnCl
 
         fillTextView(R.id.tv_desc, 0, mRepository.getDescription());
         fillTextView(R.id.tv_language,R.string.repo_language, mRepository.getLanguage());
-        fillTextView(R.id.tv_url, 0, mRepository.getHtmlUrl());
+        fillTextView(R.id.tv_url, 0, !StringUtils.isBlank(mRepository.getHomepage()) ? mRepository.getHomepage() : mRepository.getHtmlUrl());
 
         mContentView.findViewById(R.id.cell_stargazers).setOnClickListener(this);
         mContentView.findViewById(R.id.cell_forks).setOnClickListener(this);

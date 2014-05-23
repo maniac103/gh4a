@@ -23,7 +23,6 @@ import android.os.Build;
 import android.os.Environment;
 import android.text.Spannable;
 import android.text.method.LinkMovementMethod;
-import android.view.ContextThemeWrapper;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -52,9 +51,7 @@ public class UiUtils {
     }
 
     public static AlertDialog.Builder createDialogBuilder(Context context) {
-        int dialogTheme = Gh4Application.THEME == R.style.DefaultTheme ?
-                R.style.Theme_Sherlock_Dialog : R.style.Theme_Sherlock_Light_Dialog;
-        return new AlertDialog.Builder(new ContextThemeWrapper(context, dialogTheme));
+        return new AlertDialog.Builder(context);
     }
 
     public static void assignTypeface(Activity parent, Typeface typeface, int[] textViewIds) {

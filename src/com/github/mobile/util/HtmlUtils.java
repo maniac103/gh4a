@@ -15,9 +15,6 @@
  */
 package com.github.mobile.util;
 
-import static android.graphics.Paint.Style.FILL;
-import static android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE;
-import static android.text.Spanned.SPAN_MARK_MARK;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
@@ -32,15 +29,16 @@ import android.text.style.QuoteSpan;
 import android.text.style.StrikethroughSpan;
 import android.text.style.TypefaceSpan;
 
+import org.xml.sax.XMLReader;
+
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.xml.sax.XMLReader;
+import static android.graphics.Paint.Style.FILL;
+import static android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE;
+import static android.text.Spanned.SPAN_MARK_MARK;
 
-/**
- * HTML Utilities
- */
 public class HtmlUtils {
 
     private static class ReplySpan implements LeadingMarginSpan {
@@ -143,7 +141,7 @@ public class HtmlUtils {
                 count = -1;
         }
 
-        public ListSeparator append(Editable output, int indentLevel) {
+        public void append(Editable output, int indentLevel) {
             output.append('\n');
             for (int i = 0; i < indentLevel * 2; i++)
                 output.append(' ');
@@ -153,7 +151,6 @@ public class HtmlUtils {
             } else
                 output.append('\u2022');
             output.append(' ').append(' ');
-            return this;
         }
     }
 
@@ -243,7 +240,6 @@ public class HtmlUtils {
                     output.setSpan(new ReplySpan(), start, end,
                             SPAN_EXCLUSIVE_EXCLUSIVE);
                 }
-                return;
             }
         }
     };
@@ -265,16 +261,6 @@ public class HtmlUtils {
         output.removeSpan(span);
         if (start != length)
             output.setSpan(span, start, length, SPAN_EXCLUSIVE_EXCLUSIVE);
-    }
-
-    /**
-     * Encode HTML
-     *
-     * @param html
-     * @return html
-     */
-    public static CharSequence encode(final String html) {
-        return encode(html, null);
     }
 
     /**
@@ -330,7 +316,7 @@ public class HtmlUtils {
      * @param html
      * @return formatted HTML
      */
-    public static final CharSequence format(final String html) {
+    public static CharSequence format(final String html) {
         if (html == null)
             return "";
         if (html.length() == 0)
@@ -367,8 +353,8 @@ public class HtmlUtils {
         return formatted;
     }
 
-    private static StringBuilder strip(final StringBuilder input,
-            final String prefix, final String suffix) {
+    private static void strip(final StringBuilder input,
+                              final String prefix, final String suffix) {
         int start = input.indexOf(prefix);
         while (start != -1) {
             int end = input.indexOf(suffix, start + prefix.length());
@@ -377,11 +363,10 @@ public class HtmlUtils {
             input.delete(start, end + suffix.length());
             start = input.indexOf(prefix, start);
         }
-        return input;
     }
 
-    private static StringBuilder replace(final StringBuilder input,
-            final String from, final String to) {
+    private static void replace(final StringBuilder input,
+                                final String from, final String to) {
         int start = input.indexOf(from);
         int length = from.length();
         while (start != -1) {
@@ -389,12 +374,11 @@ public class HtmlUtils {
             input.insert(start, to);
             start = input.indexOf(from, start);
         }
-        return input;
     }
 
-    private static StringBuilder replace(final StringBuilder input,
-            final String fromStart, final String fromEnd, final String toStart,
-            final String toEnd) {
+    private static void replace(final StringBuilder input,
+                                final String fromStart, final String fromEnd, final String toStart,
+                                final String toEnd) {
         int start = input.indexOf(fromStart);
         while (start != -1) {
 
@@ -409,10 +393,9 @@ public class HtmlUtils {
 
             start = input.indexOf(fromStart);
         }
-        return input;
     }
 
-    private static StringBuilder formatPres(final StringBuilder input) {
+    private static void formatPres(final StringBuilder input) {
         int start = input.indexOf(PRE_START);
         final int spaceAdvance = SPACE.length() - 1;
         final int breakAdvance = BREAK.length() - 1;
@@ -459,7 +442,6 @@ public class HtmlUtils {
             }
             start = input.indexOf(PRE_START, end + PRE_END.length());
         }
-        return input;
     }
 
     /**
@@ -468,7 +450,7 @@ public class HtmlUtils {
      * @param input
      * @return input
      */
-    private static StringBuilder formatEmailFragments(final StringBuilder input) {
+    private static void formatEmailFragments(final StringBuilder input) {
         int emailStart = input.indexOf(EMAIL_START);
         int breakAdvance = BREAK.length() - 1;
         while (emailStart != -1) {
@@ -491,7 +473,6 @@ public class HtmlUtils {
 
             emailStart = input.indexOf(EMAIL_START, fullEmail);
         }
-        return input;
     }
 
     /**
@@ -499,7 +480,7 @@ public class HtmlUtils {
      *
      * @param input
      */
-    private static StringBuilder trim(final StringBuilder input) {
+    private static void trim(final StringBuilder input) {
         int length = input.length();
         int breakLength = BREAK.length();
 
@@ -517,6 +498,5 @@ public class HtmlUtils {
                 break;
             length = input.length();
         }
-        return input;
     }
 }
