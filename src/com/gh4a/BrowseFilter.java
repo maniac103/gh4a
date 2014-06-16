@@ -17,6 +17,7 @@ import android.text.TextUtils;
 import com.gh4a.activities.BaseSherlockFragmentActivity;
 import com.gh4a.activities.BlogListActivity;
 import com.gh4a.activities.ExploreActivity;
+import com.gh4a.activities.RepositoryActivity;
 import com.gh4a.activities.WikiListActivity;
 import com.gh4a.utils.IntentUtils;
 import com.gh4a.utils.StringUtils;
@@ -69,9 +70,12 @@ public class BrowseFilter extends BaseSherlockFragmentActivity {
 
             if (repo == null && action == null) {
                 IntentUtils.openUserInfoActivity(this, user);
-            } else if (action == null || "tree".equals(action)) {
-                String ref = "tree".equals(action) ? id : null;
-                IntentUtils.openRepositoryInfoActivity(this, user, repo, ref, 0);
+            } else if (action == null || "tree".equals(action) || "commits".equals(action)) {
+                String ref = action != null ? id : null;
+                int initialPage = "tree".equals(action) ? RepositoryActivity.PAGE_FILES
+                        : "commits".equals(action) ? RepositoryActivity.PAGE_COMMITS
+                        : RepositoryActivity.PAGE_REPO_OVERVIEW;
+                IntentUtils.openRepositoryInfoActivity(this, user, repo, ref, initialPage, 0);
             } else if ("issues".equals(action)) {
                 if (!StringUtils.isBlank(id)) {
                     try {
@@ -95,8 +99,6 @@ public class BrowseFilter extends BaseSherlockFragmentActivity {
                 }
             } else if ("commit".equals(action) && !StringUtils.isBlank(id)) {
                 IntentUtils.openCommitInfoActivity(this, user, repo, id, 0);
-            } else if ("commits".equals(action) && !StringUtils.isBlank(id)) {
-                IntentUtils.openRepositoryInfoActivity(this, user, repo, id, 0);
             } else if ("blob".equals(action) && !StringUtils.isBlank(id) && parts.size() >= 5) {
                 String fullPath = TextUtils.join("/", parts.subList(4, parts.size()));
                 IntentUtils.openFileViewerActivity(this, user, repo, id, fullPath, uri.getLastPathSegment());

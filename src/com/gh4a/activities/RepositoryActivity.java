@@ -59,6 +59,11 @@ public class RepositoryActivity extends LoadingFragmentPagerActivity implements 
     private static final int LOADER_STARRING = 4;
     private static final int LOADER_MODULEMAP = 5;
 
+    public static final String EXTRA_INITIAL_PAGE = "initial_page";
+    public static final int PAGE_REPO_OVERVIEW = 0;
+    public static final int PAGE_FILES = 1;
+    public static final int PAGE_COMMITS = 2;
+
     private static final int[] TITLES = new int[] {
         R.string.about, R.string.repo_files, R.string.commits
     };
@@ -76,6 +81,7 @@ public class RepositoryActivity extends LoadingFragmentPagerActivity implements 
                 mRepository = result.getData();
                 updateTitle();
                 setTabsEnabled(true);
+                applyInitialPage();
             }
             setContentEmpty(!success);
             setContentShown(true);
@@ -218,6 +224,13 @@ public class RepositoryActivity extends LoadingFragmentPagerActivity implements 
         getSupportLoaderManager().initLoader(LOADER_REPO, null, mRepoCallback);
         getSupportLoaderManager().initLoader(LOADER_WATCHING, null, mWatchCallback);
         getSupportLoaderManager().initLoader(LOADER_STARRING, null, mStarCallback);
+    }
+
+    private void applyInitialPage() {
+        int initialPage = getIntent().getIntExtra(EXTRA_INITIAL_PAGE, -1);
+        if (initialPage >= PAGE_REPO_OVERVIEW && initialPage <= PAGE_COMMITS) {
+            getPager().setCurrentItem(initialPage);
+        }
     }
 
     private void updateTitle() {
