@@ -70,12 +70,14 @@ public class BrowseFilter extends BaseSherlockFragmentActivity {
 
             if (repo == null && action == null) {
                 IntentUtils.openUserInfoActivity(this, user);
-            } else if (action == null || "tree".equals(action) || "commits".equals(action)) {
-                String ref = action != null ? id : null;
-                int initialPage = "tree".equals(action) ? RepositoryActivity.PAGE_FILES
-                        : "commits".equals(action) ? RepositoryActivity.PAGE_COMMITS
-                        : RepositoryActivity.PAGE_REPO_OVERVIEW;
-                IntentUtils.openRepositoryInfoActivity(this, user, repo, ref, initialPage, 0);
+            } else if (action == null) {
+                IntentUtils.openRepositoryInfoActivity(this, user, repo, null, 0);
+            } else if ("tree".equals(action)) {
+                IntentUtils.openRepositoryInfoActivity(this, user, repo,
+                        id, RepositoryActivity.PAGE_FILES, 0);
+            } else if ("commits".equals(action)) {
+                IntentUtils.openRepositoryInfoActivity(this, user, repo,
+                        id, RepositoryActivity.PAGE_COMMITS, 0);
             } else if ("issues".equals(action)) {
                 if (!StringUtils.isBlank(id)) {
                     try {
