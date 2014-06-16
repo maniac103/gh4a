@@ -15,15 +15,6 @@
  */
 package com.gh4a.activities;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.eclipse.egit.github.core.Label;
-import org.eclipse.egit.github.core.Milestone;
-import org.eclipse.egit.github.core.User;
-
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -54,6 +45,15 @@ import com.gh4a.loader.MilestoneListLoader;
 import com.gh4a.utils.IntentUtils;
 import com.gh4a.utils.UiUtils;
 
+import org.eclipse.egit.github.core.Label;
+import org.eclipse.egit.github.core.Milestone;
+import org.eclipse.egit.github.core.User;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class IssueListActivity extends LoadingFragmentPagerActivity {
     private String mRepoOwner;
     private String mRepoName;
@@ -70,7 +70,7 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
     private List<User> mAssignees;
 
     private static final int[] TITLES = new int[]{
-            R.string.issues_submitted, R.string.issues_updated, R.string.issues_comments
+        R.string.issues_submitted, R.string.issues_updated, R.string.issues_comments
     };
 
     private LoaderCallbacks<List<Label>> mLabelCallback = new LoaderCallbacks<List<Label>>() {
@@ -88,7 +88,6 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
             mLabels = result.getData();
             showLabelsDialog();
             getSupportLoaderManager().destroyLoader(0);
-
         }
     };
 
@@ -101,7 +100,6 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
         @Override
         public void onResultReady(LoaderResult<List<Milestone>> result) {
             if (checkForError(result)) {
-
                 return;
             }
             stopProgressDialog(mProgressDialog);
@@ -121,14 +119,12 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
         @Override
         public void onResultReady(LoaderResult<List<User>> result) {
             if (checkForError(result)) {
-
                 return;
             }
             stopProgressDialog(mProgressDialog);
             mAssignees = result.getData();
             showAssigneesDialog();
             getSupportLoaderManager().destroyLoader(2);
-
         }
     };
 
@@ -145,7 +141,6 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
             }
             mIsCollaborator = result.getData();
             invalidateOptionsMenu();
-
         }
     };
 
@@ -328,15 +323,14 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
             checkedItems[i] = checkLabelStringList.contains(l.getName());
         }
 
-        AlertDialog.Builder builder = UiUtils.createDialogBuilder(this);
-        builder.setCancelable(true);
-        builder.setTitle(R.string.issue_filter_by_labels);
-        builder.setMultiChoiceItems(allLabelArray, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
+        DialogInterface.OnMultiChoiceClickListener selectCb = new DialogInterface.OnMultiChoiceClickListener() {
+            @Override
             public void onClick(DialogInterface dialog, int whichButton, boolean isChecked) {
                 checkedItems[whichButton] = isChecked;
             }
-        });
-        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+        };
+        DialogInterface.OnClickListener okCb = new DialogInterface.OnClickListener() {
+            @Override
             public void onClick(DialogInterface dialog, int whichButton) {
                 String labels = "";
                 for (int i = 0; i < allLabelArray.length; i++) {
@@ -347,9 +341,15 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
                 mFilterData.put("labels", labels);
                 reloadIssueList();
             }
-        });
-        builder.setNegativeButton(R.string.cancel, null);
-        builder.show();
+        };
+
+        new AlertDialog.Builder(this)
+                .setCancelable(true)
+                .setTitle(R.string.issue_filter_by_labels)
+                .setMultiChoiceItems(allLabelArray, checkedItems, selectCb)
+                .setPositiveButton(R.string.ok, okCb)
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void showMilestonesDialog() {
@@ -372,10 +372,7 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
             }
         }
 
-        AlertDialog.Builder builder = UiUtils.createDialogBuilder(this);
-        builder.setCancelable(true);
-        builder.setTitle(R.string.issue_filter_by_milestone);
-        builder.setSingleChoiceItems(milestones, checkedItem, new DialogInterface.OnClickListener() {
+        DialogInterface.OnClickListener selectCb = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (which == 0) {
@@ -384,14 +381,21 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
                     mFilterData.put("milestone", String.valueOf(milestoneIds[which]));
                 }
             }
-        });
-        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+        };
+        DialogInterface.OnClickListener okCb = new DialogInterface.OnClickListener() {
+            @Override
             public void onClick(DialogInterface dialog, int which) {
                 reloadIssueList();
             }
-        });
-        builder.setNegativeButton(R.string.cancel, null);
-        builder.show();
+        };
+
+        new AlertDialog.Builder(this)
+                .setCancelable(true)
+                .setTitle(R.string.issue_filter_by_milestone)
+                .setSingleChoiceItems(milestones, checkedItem, selectCb)
+                .setPositiveButton(R.string.ok, okCb)
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void showAssigneesDialog() {
@@ -410,10 +414,7 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
             }
         }
 
-        AlertDialog.Builder builder = UiUtils.createDialogBuilder(this);
-        builder.setCancelable(true);
-        builder.setTitle(R.string.issue_filter_by_assignee);
-        builder.setSingleChoiceItems(assignees, checkedItem, new DialogInterface.OnClickListener() {
+        DialogInterface.OnClickListener selectCb = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (which == 0) {
@@ -422,14 +423,21 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
                     mFilterData.put("assignee", assignees[which]);
                 }
             }
-        });
-        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+        };
+        DialogInterface.OnClickListener okCb = new DialogInterface.OnClickListener() {
+            @Override
             public void onClick(DialogInterface dialog, int which) {
                 reloadIssueList();
             }
-        });
-        builder.setNegativeButton(R.string.cancel, null);
-        builder.show();
+        };
+
+        new AlertDialog.Builder(this)
+                .setCancelable(true)
+                .setTitle(R.string.issue_filter_by_assignee)
+                .setSingleChoiceItems(assignees, checkedItem, selectCb)
+                .setPositiveButton(R.string.ok, okCb)
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private boolean checkForError(LoaderResult<?> result) {
