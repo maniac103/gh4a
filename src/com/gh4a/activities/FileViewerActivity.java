@@ -15,7 +15,6 @@
  */
 package com.gh4a.activities;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.net.Uri;
@@ -23,9 +22,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
 import android.text.TextUtils;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.view.Menu;
@@ -33,7 +29,6 @@ import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.gh4a.Constants;
 import com.gh4a.Gh4Application;
-import com.gh4a.LoadingFragmentActivity;
 import com.gh4a.R;
 import com.gh4a.loader.ContentLoader;
 import com.gh4a.loader.LoaderCallbacks;
@@ -48,7 +43,7 @@ import org.eclipse.egit.github.core.util.EncodingUtils;
 
 import java.util.List;
 
-public class FileViewerActivity extends LoadingFragmentActivity {
+public class FileViewerActivity extends WebViewerActivity {
     protected String mRepoOwner;
     protected String mRepoName;
     private String mPath;
@@ -56,21 +51,6 @@ public class FileViewerActivity extends LoadingFragmentActivity {
     private String mSha;
     private String mDiff;
     private boolean mInDiffMode;
-
-    private WebView mWebView;
-
-    private WebViewClient mWebViewClient = new WebViewClient() {
-        @Override
-        public void onPageFinished(WebView webView, String url) {
-            setContentShown(true);
-        }
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(intent);
-            return true;
-        }
-    };
 
     private LoaderCallbacks<List<RepositoryContents>> mFileCallback =
             new LoaderCallbacks<List<RepositoryContents>>() {
@@ -80,22 +60,28 @@ public class FileViewerActivity extends LoadingFragmentActivity {
         }
         @Override
         public void onResultReady(LoaderResult<List<RepositoryContents>> result) {
-            setContentEmpty(true);
+            boolean dataLoaded = false;
             if (!result.handleError(FileViewerActivity.this)) {
                 List<RepositoryContents> data = result.getData();
                 if (data != null && !data.isEmpty()) {
                     loadContent(data.get(0));
-                    setContentEmpty(false);
+                    dataLoaded = true;
                 }
             }
-            setContentShown(true);
+            if (!dataLoaded) {
+                setContentEmpty(true);
+                setContentShown(true);
+            }
         }
     };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        setTheme(Gh4Application.THEME);
         super.onCreate(savedInstanceState);
+
+        if (hasErrorView()) {
+            return;
+        }
 
         Bundle data = getIntent().getExtras();
         mRepoOwner = data.getString(Constants.Repository.OWNER);
@@ -106,12 +92,6 @@ public class FileViewerActivity extends LoadingFragmentActivity {
         mDiff = data.getString(Constants.Commit.DIFF);
         mInDiffMode = data.getString(Constants.Object.TREE_SHA) != null;
 
-        if (hasErrorView()) {
-            return;
-        }
-
-        setContentView(R.layout.web_viewer);
-
         ActionBar actionBar = getSupportActionBar();
         actionBar.setTitle(FileUtils.getFileName(mPath));
         actionBar.setSubtitle(mRepoOwner + "/" + mRepoName);
@@ -121,28 +101,7 @@ public class FileViewerActivity extends LoadingFragmentActivity {
             showDiff();
         } else {
             getSupportLoaderManager().initLoader(0, null, mFileCallback);
-            setContentShown(false);
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    @SuppressLint("SetJavaScriptEnabled")
-    private void setupWebView() {
-        mWebView = (WebView) findViewById(R.id.web_view);
-
-        WebSettings s = mWebView.getSettings();
-        s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
-        s.setAllowFileAccess(true);
-        s.setBuiltInZoomControls(true);
-        s.setLightTouchEnabled(true);
-        s.setLoadsImagesAutomatically(true);
-        s.setSupportZoom(true);
-        s.setSupportMultipleWindows(true);
-        s.setJavaScriptEnabled(true);
-        s.setUseWideViewPort(true);
-
-        mWebView.setBackgroundColor(ThemeUtils.getWebViewBackgroundColor(Gh4Application.THEME));
-        mWebView.setWebViewClient(mWebViewClient);
     }
 
     private void showDiff() {
@@ -172,25 +131,23 @@ public class FileViewerActivity extends LoadingFragmentActivity {
         }
         content.append("</pre></body></html>");
 
-        setupWebView();
-
-        mWebView.loadDataWithBaseURL("file:///android_asset/", content.toString(), null, "utf-8", null);
+        mWebView.loadDataWithBaseURL("file:///android_asset/",
+                content.toString(), null, "utf-8", null);
     }
 
     private void loadContent(RepositoryContents content) {
-        setupWebView();
-
         String base64Data = content.getContent();
+        String html;
+
         if (base64Data != null && FileUtils.isImage(mPath)) {
-            String imageUrl = "data:image/" + FileUtils.getFileExtension(mPath) + ";base64," + base64Data;
-            String htmlImage = StringUtils.highlightImage(imageUrl);
-            mWebView.loadDataWithBaseURL("file:///android_asset/", htmlImage, null, "utf-8", null);
+            String imageUrl = "data:image/" + FileUtils.getFileExtension(mPath) +
+                    ";base64," + base64Data;
+            html = StringUtils.highlightImage(imageUrl);
         } else {
             String data = base64Data != null ? new String(EncodingUtils.fromBase64(base64Data)) : "";
-            String highlightedText = StringUtils.highlightSyntax(data, true, mPath, mRepoOwner, mRepoName, mRef);
-
-            mWebView.loadDataWithBaseURL("file:///android_asset/", highlightedText, null, "utf-8", null);
+            html = StringUtils.highlightSyntax(data, true, mPath, mRepoOwner, mRepoName, mRef);
         }
+        mWebView.loadDataWithBaseURL("file:///android_asset/", html, null, "utf-8", null);
     }
 
     @Override

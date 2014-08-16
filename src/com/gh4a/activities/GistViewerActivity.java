@@ -15,16 +15,12 @@
  */
 package com.gh4a.activities;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.view.Menu;
@@ -32,25 +28,21 @@ import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.gh4a.Constants;
 import com.gh4a.Gh4Application;
-import com.gh4a.LoadingFragmentActivity;
 import com.gh4a.R;
 import com.gh4a.loader.GistLoader;
 import com.gh4a.loader.LoaderCallbacks;
 import com.gh4a.loader.LoaderResult;
 import com.gh4a.utils.IntentUtils;
 import com.gh4a.utils.StringUtils;
-import com.gh4a.utils.ThemeUtils;
 
 import org.eclipse.egit.github.core.Gist;
 import org.eclipse.egit.github.core.GistFile;
 
-public class GistViewerActivity extends LoadingFragmentActivity {
+public class GistViewerActivity extends WebViewerActivity {
     private String mUserLogin;
     private String mFileName;
     private String mGistId;
     private GistFile mGistFile;
-
-    private WebView mWebView;
 
     private LoaderCallbacks<Gist> mGistCallback = new LoaderCallbacks<Gist>() {
         @Override
@@ -62,73 +54,36 @@ public class GistViewerActivity extends LoadingFragmentActivity {
             boolean success = !result.handleError(GistViewerActivity.this);
             if (success) {
                 mGistFile = result.getData().getFiles().get(mFileName);
-                fillData(mGistFile.getContent(), true);
+
+                String highlightedText = StringUtils.highlightSyntax(mGistFile.getContent(),
+                        true, mFileName, null, null, null);
+                mWebView.loadDataWithBaseURL("file:///android_asset/", highlightedText,
+                        "text/html", "utf-8", "");
+            } else {
+                setContentEmpty(true);
+                setContentShown(true);
             }
-            setContentEmpty(!success);
-            setContentShown(true);
             invalidateOptionsMenu();
-        }
-    };
-
-    private WebViewClient mWebViewClient = new WebViewClient() {
-        @Override
-        public void onPageFinished(WebView webView, String url) {
-            setContentShown(true);
-        }
-
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(intent);
-            return true;
         }
     };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        setTheme(Gh4Application.THEME);
         super.onCreate(savedInstanceState);
-
-        mUserLogin = getIntent().getExtras().getString(Constants.User.LOGIN);
-        mFileName = getIntent().getExtras().getString(Constants.Gist.FILENAME);
-        mGistId = getIntent().getExtras().getString(Constants.Gist.ID);
 
         if (hasErrorView()) {
             return;
         }
 
-        setContentView(R.layout.web_viewer);
-        setContentShown(false);
+        mUserLogin = getIntent().getExtras().getString(Constants.User.LOGIN);
+        mFileName = getIntent().getExtras().getString(Constants.Gist.FILENAME);
+        mGistId = getIntent().getExtras().getString(Constants.Gist.ID);
 
-        ActionBar mActionBar = getSupportActionBar();
-        mActionBar.setTitle(mFileName);
-        mActionBar.setDisplayHomeAsUpEnabled(true);
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setTitle(mFileName);
+        actionBar.setDisplayHomeAsUpEnabled(true);
 
         getSupportLoaderManager().initLoader(0, null, mGistCallback);
-    }
-
-    @SuppressWarnings("deprecation")
-    @SuppressLint("SetJavaScriptEnabled")
-    private void fillData(String data, boolean highlight) {
-        mWebView = (WebView) findViewById(R.id.web_view);
-
-        WebSettings s = mWebView.getSettings();
-        s.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
-        s.setAllowFileAccess(true);
-        s.setBuiltInZoomControls(true);
-        s.setLightTouchEnabled(true);
-        s.setLoadsImagesAutomatically(true);
-        s.setSupportZoom(true);
-        s.setSupportMultipleWindows(true);
-        s.setJavaScriptEnabled(true);
-        s.setUseWideViewPort(true);
-
-        mWebView.setBackgroundColor(ThemeUtils.getWebViewBackgroundColor(Gh4Application.THEME));
-        mWebView.setWebViewClient(mWebViewClient);
-
-        String highlightedText = StringUtils.highlightSyntax(data, highlight, mFileName, null, null, null);
-
-        mWebView.loadDataWithBaseURL("file:///android_asset/", highlightedText, "text/html", "utf-8", "");
     }
 
     @Override
