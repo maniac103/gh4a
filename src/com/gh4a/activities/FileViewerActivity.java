@@ -15,10 +15,8 @@
  */
 package com.gh4a.activities;
 
-import android.annotation.TargetApi;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
 import android.text.TextUtils;
@@ -131,23 +129,21 @@ public class FileViewerActivity extends WebViewerActivity {
         }
         content.append("</pre></body></html>");
 
-        mWebView.loadDataWithBaseURL("file:///android_asset/",
-                content.toString(), null, "utf-8", null);
+        loadThemedHtml(content.toString());
     }
 
     private void loadContent(RepositoryContents content) {
         String base64Data = content.getContent();
-        String html;
 
         if (base64Data != null && FileUtils.isImage(mPath)) {
             String imageUrl = "data:image/" + FileUtils.getFileExtension(mPath) +
                     ";base64," + base64Data;
-            html = StringUtils.highlightImage(imageUrl);
+            loadThemedHtml(StringUtils.highlightImage(imageUrl));
         } else {
             String data = base64Data != null ? new String(EncodingUtils.fromBase64(base64Data)) : "";
-            html = StringUtils.highlightSyntax(data, true, mPath, mRepoOwner, mRepoName, mRef);
+            loadThemedHtml(StringUtils.highlightSyntax(data, true,
+                    mPath, mRepoOwner, mRepoName, mRef));
         }
-        mWebView.loadDataWithBaseURL("file:///android_asset/", html, null, "utf-8", null);
     }
 
     @Override
@@ -156,9 +152,6 @@ public class FileViewerActivity extends WebViewerActivity {
         inflater.inflate(R.menu.download_menu, menu);
 
         menu.removeItem(R.id.download);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-            menu.removeItem(R.id.search);
-        }
 
         if (mDiff != null) {
             menu.add(0, 11, Menu.NONE, getString(R.string.object_view_file_at, mSha.substring(0, 7)))
@@ -205,9 +198,6 @@ public class FileViewerActivity extends WebViewerActivity {
                 shareIntent = Intent.createChooser(shareIntent, getString(R.string.share_title));
                 startActivity(shareIntent);
                 return true;
-            case R.id.search:
-                doSearch();
-                return true;
             case 10:
                 Intent historyIntent = new Intent(this, CommitHistoryActivity.class);
                 historyIntent.putExtra(Constants.Repository.OWNER, mRepoOwner);
@@ -228,13 +218,5 @@ public class FileViewerActivity extends WebViewerActivity {
                 return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("deprecation")
-    @TargetApi(11)
-    private void doSearch() {
-        if (mWebView != null) {
-            mWebView.showFindDialog(null, true);
-        }
     }
 }

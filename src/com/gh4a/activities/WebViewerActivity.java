@@ -1,8 +1,10 @@
 package com.gh4a.activities;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.webkit.WebSettings;
@@ -10,13 +12,16 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuInflater;
+import com.actionbarsherlock.view.MenuItem;
 import com.gh4a.Gh4Application;
 import com.gh4a.LoadingFragmentActivity;
 import com.gh4a.R;
 import com.gh4a.utils.ThemeUtils;
 
 public class WebViewerActivity extends LoadingFragmentActivity {
-    protected WebView mWebView;
+    private WebView mWebView;
 
     private WebViewClient mWebViewClient = new WebViewClient() {
         @Override
@@ -69,5 +74,45 @@ public class WebViewerActivity extends LoadingFragmentActivity {
 
         mWebView.setBackgroundColor(ThemeUtils.getWebViewBackgroundColor(Gh4Application.THEME));
         mWebView.setWebViewClient(mWebViewClient);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+            menu.removeItem(R.id.search);
+        }
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.search:
+                doSearch();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    protected void loadUnthemedHtml(String html) {
+        if (Gh4Application.THEME == R.style.DefaultTheme) {
+            html = "<style type=\"text/css\">" +
+                    "body { color: #A3A3A5 !important }" +
+                    "a { color: #4183C4 !important }</style><body>" +
+                    html + "</body>";
+        }
+        loadThemedHtml(html);
+    }
+
+    protected void loadThemedHtml(String html) {
+        mWebView.loadDataWithBaseURL("file:///android_asset/", html, null, "utf-8", null);
+    }
+
+    @SuppressWarnings("deprecation")
+    @TargetApi(11)
+    private void doSearch() {
+        if (mWebView != null) {
+            mWebView.showFindDialog(null, true);
+        }
     }
 }

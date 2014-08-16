@@ -15,10 +15,8 @@
  */
 package com.gh4a.activities;
 
-import android.annotation.TargetApi;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
 
@@ -27,7 +25,6 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.gh4a.Constants;
-import com.gh4a.Gh4Application;
 import com.gh4a.R;
 import com.gh4a.loader.GistLoader;
 import com.gh4a.loader.LoaderCallbacks;
@@ -54,11 +51,8 @@ public class GistViewerActivity extends WebViewerActivity {
             boolean success = !result.handleError(GistViewerActivity.this);
             if (success) {
                 mGistFile = result.getData().getFiles().get(mFileName);
-
-                String highlightedText = StringUtils.highlightSyntax(mGistFile.getContent(),
-                        true, mFileName, null, null, null);
-                mWebView.loadDataWithBaseURL("file:///android_asset/", highlightedText,
-                        "text/html", "utf-8", "");
+                loadThemedHtml(StringUtils.highlightSyntax(mGistFile.getContent(),
+                        true, mFileName, null, null, null));
             } else {
                 setContentEmpty(true);
                 setContentShown(true);
@@ -93,9 +87,6 @@ public class GistViewerActivity extends WebViewerActivity {
 
         menu.removeItem(R.id.download);
         menu.removeItem(R.id.share);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-            menu.removeItem(R.id.search);
-        }
         if (mGistFile == null) {
             menu.removeItem(R.id.browser);
         }
@@ -114,18 +105,7 @@ public class GistViewerActivity extends WebViewerActivity {
             case R.id.browser:
                 IntentUtils.launchBrowser(this, Uri.parse(mGistFile.getRawUrl()));
                 return true;
-            case R.id.search:
-                doSearch();
-                return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("deprecation")
-    @TargetApi(11)
-    private void doSearch() {
-        if (mWebView != null) {
-            mWebView.showFindDialog(null, true);
-        }
     }
 }

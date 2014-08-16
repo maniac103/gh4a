@@ -16,15 +16,10 @@
 package com.gh4a.activities;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.gh4a.Constants;
-import com.gh4a.Gh4Application;
 import com.gh4a.R;
 
 public class BlogActivity extends WebViewerActivity {
@@ -44,7 +39,7 @@ public class BlogActivity extends WebViewerActivity {
         actionBar.setSubtitle(R.string.blog);
         actionBar.setDisplayHomeAsUpEnabled(false);
 
-        mWebView.loadDataWithBaseURL("https://github.com", content, "text/html", "utf-8", null);
+        loadUnthemedHtml(content);
     }
 
     @Override

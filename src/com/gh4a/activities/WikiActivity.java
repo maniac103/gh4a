@@ -15,18 +15,10 @@
  */
 package com.gh4a.activities;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import com.actionbarsherlock.app.ActionBar;
 import com.gh4a.Constants;
-import com.gh4a.Gh4Application;
-import com.gh4a.LoadingFragmentActivity;
-import com.gh4a.R;
 
 public class WikiActivity extends WebViewerActivity {
     private String mUserLogin;
@@ -50,7 +42,7 @@ public class WikiActivity extends WebViewerActivity {
         actionBar.setSubtitle(mUserLogin + "/" + mRepoName);
         actionBar.setDisplayHomeAsUpEnabled(true);
 
-        mWebView.loadDataWithBaseURL("https://github.com", content, "text/html", "utf-8", null);
+        loadUnthemedHtml(content);
     }
 
     @Override
