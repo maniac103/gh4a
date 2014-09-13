@@ -98,6 +98,7 @@ public class FileViewerActivity extends WebViewerActivity {
 
     private void loadContent(RepositoryContents content) {
         String base64Data = content.getContent();
+
         if (base64Data != null && FileUtils.isImage(mPath)) {
             String imageUrl = "data:image/" + FileUtils.getFileExtension(mPath) +
                     ";base64," + base64Data;
@@ -128,8 +129,7 @@ public class FileViewerActivity extends WebViewerActivity {
 
         switch (item.getItemId()) {
             case R.id.browser:
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivity(browserIntent);
+                IntentUtils.launchBrowser(this, Uri.parse(url));
                 return true;
             case R.id.share:
                 Intent shareIntent = new Intent(Intent.ACTION_SEND);
@@ -159,3 +159,4 @@ public class FileViewerActivity extends WebViewerActivity {
                 null, Intent.FLAG_ACTIVITY_CLEAR_TOP);
     }
 }
+
