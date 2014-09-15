@@ -59,6 +59,7 @@ public interface Constants {
 
     public interface Commit {
         public static final String DIFF = "Commit.DIFF";
+        public static final String COMMENTS = "Commit.COMMENTS";
     }
 
     public interface PullRequest {
