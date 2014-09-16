@@ -75,13 +75,10 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
     private static final int[] TITLES = new int[] {
         R.string.open, R.string.closed
     };
-    // The order of those two must match the menu item order!
-    private static final String[] SORTMODES = new String[] {
-        "updated", "created", "comments"
-    };
-    private static final int[] SORTMODE_MENU_IDS = new int[] {
-        R.id.sort_by_updated, R.id.sort_by_created, R.id.sort_by_comments
-    };
+
+    private static final String SORT_MODE_CREATED = "created";
+    private static final String SORT_MODE_UPDATED = "updated";
+    private static final String SORT_MODE_COMMENTS = "comments";
 
     private LoaderCallbacks<List<Label>> mLabelCallback = new LoaderCallbacks<List<Label>>() {
         @Override
@@ -168,7 +165,7 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
         Bundle data = getIntent().getExtras();
         mRepoOwner = data.getString(Constants.Repository.OWNER);
         mRepoName = data.getString(Constants.Repository.NAME);
-        mSortMode = SORTMODES[0];
+        mSortMode = SORT_MODE_CREATED;
         mSortAscending = false;
 
         if (TextUtils.equals(data.getString(Constants.Issue.STATE), Constants.Issue.STATE_CLOSED)) {
@@ -232,15 +229,16 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
             menu.removeItem(R.id.view_labels);
             menu.removeItem(R.id.view_milestones);
         }
-        for (int i = 0; i < SORTMODES.length; i++) {
-            if (SORTMODES[i].equals(mSortMode)) {
-                menu.findItem(SORTMODE_MENU_IDS[i]).setChecked(true);
-                break;
-            }
-        }
 
-        int dirItemId = mSortAscending ? R.id.sort_ascending : R.id.sort_descending;
-        menu.findItem(dirItemId).setChecked(true);
+        int selectedSortItemId;
+        if (TextUtils.equals(mSortMode, SORT_MODE_CREATED)) {
+            selectedSortItemId = mSortAscending ? R.id.sort_created_asc : R.id.sort_created_desc;
+        } else if (TextUtils.equals(mSortMode, SORT_MODE_UPDATED)) {
+            selectedSortItemId = mSortAscending ? R.id.sort_updated_asc : R.id.sort_updated_desc;
+        } else { /* SORT_MODE_COMMENTS */
+            selectedSortItemId = mSortAscending ? R.id.sort_comments_asc : R.id.sort_comments_desc;
+        }
+        menu.findItem(selectedSortItemId).setChecked(true);
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -255,16 +253,23 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.sort_by_comments:
-            case R.id.sort_by_created:
-            case R.id.sort_by_updated:
-                for (int i = 0; i < SORTMODE_MENU_IDS.length; i++) {
-                    item.setChecked(SORTMODE_MENU_IDS[i] == id);
-                    if (item.isChecked()) {
-                        mSortMode = SORTMODES[i];
-                    }
-                }
-                reloadIssueList();
+            case R.id.sort_created_asc:
+                updateSortModeAndReload(item, SORT_MODE_CREATED, true);
+                return true;
+            case R.id.sort_created_desc:
+                updateSortModeAndReload(item, SORT_MODE_CREATED, false);
+                return true;
+            case R.id.sort_updated_asc:
+                updateSortModeAndReload(item, SORT_MODE_UPDATED, true);
+                return true;
+            case R.id.sort_updated_desc:
+                updateSortModeAndReload(item, SORT_MODE_UPDATED, false);
+                return true;
+            case R.id.sort_comments_asc:
+                updateSortModeAndReload(item, SORT_MODE_COMMENTS, true);
+                return true;
+            case R.id.sort_comments_desc:
+                updateSortModeAndReload(item, SORT_MODE_COMMENTS, false);
                 return true;
             case R.id.create_issue:
                 if (Gh4Application.get(this).isAuthorized()) {
@@ -289,16 +294,6 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
                 intent.putExtra(Constants.Repository.OWNER, mRepoOwner);
                 intent.putExtra(Constants.Repository.NAME, mRepoName);
                 startActivity(intent);
-                return true;
-            case R.id.sort_ascending:
-                mSortAscending = true;
-                item.setChecked(true);
-                reloadIssueList();
-                return true;
-            case R.id.sort_descending:
-                mSortAscending = false;
-                item.setChecked(true);
-                reloadIssueList();
                 return true;
             case R.id.labels:
                 if (mLabels == null) {
@@ -326,6 +321,13 @@ public class IssueListActivity extends LoadingFragmentPagerActivity {
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void updateSortModeAndReload(MenuItem item, String sortMode, boolean ascending) {
+        item.setChecked(true);
+        mSortAscending = ascending;
+        mSortMode = sortMode;
+        reloadIssueList();
     }
 
     private void reloadIssueList() {

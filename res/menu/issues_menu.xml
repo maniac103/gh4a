@@ -7,19 +7,18 @@
         <menu>
             <group android:id="@+id/sort_mode"
                 android:checkableBehavior="single">
-                <item android:id="@+id/sort_by_updated"
-                    android:title="@string/issue_sort_by_updated" />
-                <item android:id="@+id/sort_by_created"
-                    android:title="@string/issue_sort_by_created" />
-                <item android:id="@+id/sort_by_comments"
-                    android:title="@string/issue_sort_by_comments" />
-            </group>
-            <group android:id="@+id/sort_direction"
-                android:checkableBehavior="single">
-                <item android:id="@+id/sort_ascending"
-                    android:title="@string/issue_sort_ascending" />
-                <item android:id="@+id/sort_descending"
-                    android:title="@string/issue_sort_descending" />
+                <item android:id="@+id/sort_created_desc"
+                    android:title="@string/issue_sort_created_desc" />
+                <item android:id="@+id/sort_created_asc"
+                    android:title="@string/issue_sort_created_asc" />
+                <item android:id="@+id/sort_updated_desc"
+                    android:title="@string/issue_sort_updated_desc" />
+                <item android:id="@+id/sort_updated_asc"
+                    android:title="@string/issue_sort_updated_asc" />
+                <item android:id="@+id/sort_comments_desc"
+                    android:title="@string/issue_sort_comments_desc" />
+                <item android:id="@+id/sort_comments_asc"
+                    android:title="@string/issue_sort_comments_asc" />
             </group>
         </menu>
     </item>

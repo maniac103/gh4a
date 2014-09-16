@@ -239,11 +239,12 @@
     <string name="issue_error_close">Cannot close issue</string>
     <string name="issue_success_reopen">Successfully reopened issue</string>
     <string name="issue_sort_order">Sort order</string>
-    <string name="issue_sort_by_updated">Last update time</string>
-    <string name="issue_sort_by_created">Creation time</string>
-    <string name="issue_sort_by_comments">Number of comments</string>
-    <string name="issue_sort_ascending">Ascending</string>
-    <string name="issue_sort_descending">Descending</string>
+    <string name="issue_sort_created_asc">Oldest</string>
+    <string name="issue_sort_created_desc">Newest</string>
+    <string name="issue_sort_updated_asc">Least recently updated</string>
+    <string name="issue_sort_updated_desc">Most recently updated</string>
+    <string name="issue_sort_comments_asc">Least commented</string>
+    <string name="issue_sort_comments_desc">Most commented</string>
     <string name="issue_manage_labels">Manage Labels</string>
     <string name="issue_manage_milestones">Manage Milestones</string>
     <string name="issue_dialog_delete_title">Delete %1$s?</string>
