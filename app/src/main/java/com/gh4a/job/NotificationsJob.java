@@ -39,7 +39,8 @@ import org.eclipse.egit.github.core.User;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +51,6 @@ public class NotificationsJob extends Job {
     public static final String TAG = "job_notifications";
 
     private static final String KEY_LAST_NOTIFICATION_CHECK = "last_notification_check";
-    private static final String KEY_LAST_NOTIFICATION_IDS = "last_notification_ids";
 
     public static void scheduleJob(int intervalMinutes) {
         new JobRequest.Builder(TAG)
@@ -92,7 +92,6 @@ public class NotificationsJob extends Job {
             SharedPreferences prefs = getContext().getSharedPreferences(SettingsFragment.PREF_NAME,
                     Context.MODE_PRIVATE);
             long lastCheck = prefs.getLong(KEY_LAST_NOTIFICATION_CHECK, 0);
-            Set<String> newPostedIds = null;
 
             NotificationManagerCompat notificationManager =
                     NotificationManagerCompat.from(getContext());
@@ -100,39 +99,25 @@ public class NotificationsJob extends Job {
             if (notifications.isEmpty()) {
                 notificationManager.cancelAll();
             } else {
-                ArrayList<Notification> added = new ArrayList<>();
-                Set<String> lastIds = prefs.getStringSet(KEY_LAST_NOTIFICATION_IDS, null);
-
+                HashMap<Repository, ArrayList<Notification>> notifsPerRepo = new HashMap<>();
                 for (Notification n : notifications) {
-                    if (lastIds != null && lastIds.contains(n.getId())) {
-                        lastIds.remove(n.getId());
-                    } else {
-                        added.add(n);
+                    ArrayList<Notification> list = notifsPerRepo.get(n.getRepository());
+                    if (list == null) {
+                        list = new ArrayList<>();
+                        notifsPerRepo.put(n.getRepository(), list);
                     }
-                }
-                // What's in lastIds now are the removed notifications, so cancel those
-                if (lastIds != null) {
-                    for (String id : lastIds) {
-                        notificationManager.cancel(id.hashCode());
-                    }
+                    list.add(0, n);
                 }
 
-                if ((lastIds != null && !lastIds.isEmpty()) || !added.isEmpty()) {
-                    showSummaryNotification(notificationManager,
-                            notifications, lastCheck, !added.isEmpty());
-                }
-                for (int i = 0; i < added.size(); i++) {
-                    showSingleNotification(notificationManager, added.get(i), lastCheck);
-                }
-                newPostedIds = new HashSet<>();
-                for (Notification n : notifications) {
-                    newPostedIds.add(n.getId());
+                showSummaryNotification(notificationManager,
+                        notifsPerRepo.values(), lastCheck, true); // FIXME
+                for (ArrayList<Notification> repoNotifs : notifsPerRepo.values()) {
+                    showRepoNotification(notificationManager, repoNotifs, lastCheck);
                 }
             }
 
             prefs.edit()
                     .putLong(KEY_LAST_NOTIFICATION_CHECK, System.currentTimeMillis())
-                    .putStringSet(KEY_LAST_NOTIFICATION_IDS, newPostedIds)
                     .apply();
         } catch (IOException e) {
             return Result.FAILURE;
@@ -141,16 +126,18 @@ public class NotificationsJob extends Job {
         return Result.SUCCESS;
     }
 
-    private void showSingleNotification(NotificationManagerCompat notificationManager,
-            Notification notification, long lastCheck) {
-        int id = notification.getId().hashCode();
-        Repository repository = notification.getRepository();
-        User owner = repository.getOwner();
-        String title = owner.getLogin() + "/" + repository.getName();
-        long when = notification.getUpdatedAt().getTime();
+    private void showRepoNotification(NotificationManagerCompat notificationManager,
+            ArrayList<Notification> notifications, long lastCheck) {
+        Repository repository = notifications.get(0).getRepository();
+        final int id = repository.hashCode();
+        String title = repository.getOwner().getLogin() + "/" + repository.getName();
+        long when = notifications.get(notifications.size() - 1).getUpdatedAt().getTime(); //notifications are sorted by time ascending
+        String text = getContext().getResources()
+                .getQuantityString(R.plurals.unread_notifications_summary_text,
+                        notifications.size(), notifications.size());
 
-        Intent markReadIntent = NotificationHandlingService.makeMarkNotificationAsReadActionIntent(
-                getContext(), notification.getId());
+        Intent markReadIntent = NotificationHandlingService.makeMarkReposNotificationsAsReadActionIntent(
+                getContext(), repository);
         PendingIntent markReadPendingIntent = PendingIntent.getService(getContext(), id,
                 markReadIntent, 0);
         NotificationCompat.Action markReadAction = new NotificationCompat.Action(
@@ -158,7 +145,7 @@ public class NotificationsJob extends Job {
                 markReadPendingIntent);
 
         NotificationCompat.Builder builder = makeBaseBuilder()
-                .setLargeIcon(loadRoundUserAvatar(owner))
+                .setLargeIcon(loadRoundUserAvatar(repository.getOwner()))
                 .setGroup(GROUP_ID_GITHUB)
                 .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
                 .setWhen(when)
@@ -166,32 +153,44 @@ public class NotificationsJob extends Job {
                 .setContentTitle(title)
                 .setAutoCancel(true)
                 .addAction(markReadAction)
-                .setContentText(notification.getSubject().getTitle());
+                .setContentText(text);
 
-        String url = notification.getSubject().getUrl();
-        if (url != null) {
-            Uri uri = ApiHelpers.normalizeUri(Uri.parse(url));
-            Intent intent = NotificationHandlingService.makeOpenNotificationActionIntent(
-                    getContext(), uri, notification.getId());
-            PendingIntent pendingIntent = PendingIntent.getService(getContext(), id, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT);
-            builder.setContentIntent(pendingIntent);
+        String url = notifications.size() == 1 ? notifications.get(0).getUrl() : null;
+        Uri uri = url != null ? ApiHelpers.normalizeUri(Uri.parse(url)) : null;
+
+        Intent intent = NotificationHandlingService.makeOpenNotificationActionIntent(
+                getContext(), uri, repository);
+        PendingIntent pendingIntent = PendingIntent.getService(getContext(), id, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(pendingIntent);
+
+        NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle("")
+                .setConversationTitle(title);
+        for (Notification n : notifications) {
+            style.addMessage(n.getSubject().getTitle(),
+                    n.getUpdatedAt().getTime(), determineNotificationTypeLabel(n));
         }
+        builder.setStyle(style);
 
         notificationManager.notify(id, builder.build());
     }
 
     private void showSummaryNotification(NotificationManagerCompat notificationManager,
-            List<Notification> notifications, long lastCheck, boolean hasNewNotification) {
+            Collection<ArrayList<Notification>> notificationsPerRepo,
+            long lastCheck, boolean hasNewNotification) {
+        int totalCount = 0;
+        for (ArrayList<Notification> list : notificationsPerRepo) {
+            totalCount += list.size();
+        }
+
         String title = getContext().getString(R.string.unread_notifications_summary_title);
         String text = getContext().getResources()
-                .getQuantityString(R.plurals.unread_notifications_summary_text,
-                        notifications.size(), notifications.size());
+                .getQuantityString(R.plurals.unread_notifications_summary_text, totalCount, totalCount);
 
         android.app.Notification publicVersion = makeBaseBuilder()
                 .setContentTitle(title)
                 .setContentText(text)
-                .setNumber(notifications.size())
+                .setNumber(totalCount)
                 .build();
 
         PendingIntent contentIntent = PendingIntent.getActivity(getContext(), 0,
@@ -205,21 +204,30 @@ public class NotificationsJob extends Job {
                 .setContentText(text)
                 .setPublicVersion(publicVersion)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setNumber(notifications.size());
+                .setNumber(totalCount);
 
         NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle(builder)
-                .setBigContentTitle(title)
-                .setSummaryText(text);
-        for (int i = 0; i < notifications.size() && i < 10; i++) {
-            Notification n = notifications.get(i);
-            Repository repository = n.getRepository();
+                .setBigContentTitle(text);
+        for (ArrayList<Notification> list : notificationsPerRepo) {
+            Repository repository = list.get(0).getRepository();
             String repoName = repository.getOwner().getLogin() + "/" + repository.getName();
             final TextAppearanceSpan notificationPrimarySpan =
                     new TextAppearanceSpan(getContext(), R.style.TextAppearance_NotificationEmphasized);
-            SpannableStringBuilder line = new SpannableStringBuilder(repoName)
-                    .append(" ")
-                    .append(n.getSubject().getTitle());
-            line.setSpan(notificationPrimarySpan, 0, repoName.length(),
+            final int emphasisEnd;
+
+            SpannableStringBuilder line = new SpannableStringBuilder(repoName).append(" ");
+            if (list.size() == 1) {
+                Notification n = list.get(0);
+                line.append(determineNotificationTypeLabel(n));
+                emphasisEnd = line.length();
+                line.append(" ").append(n.getSubject().getTitle());
+            } else {
+                emphasisEnd = line.length();
+                line.append(getContext().getResources().getQuantityString(R.plurals.notification,
+                        list.size(), list.size()));
+            }
+
+            line.setSpan(notificationPrimarySpan, 0, emphasisEnd,
                     SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
             inboxStyle.addLine(line);
         }
@@ -230,6 +238,11 @@ public class NotificationsJob extends Job {
         }
 
         notificationManager.notify(0, builder.build());
+    }
+
+    private String determineNotificationTypeLabel(Notification n) {
+        // FIXME
+        return n.getSubject().getType();
     }
 
     private NotificationCompat.Builder makeBaseBuilder() {
